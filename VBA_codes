@@ -1,0 +1,73 @@
+Sub GetData()
+
+Dim ws As Worksheet
+Set ws = ActiveWorkbook.Sheets("CcyData")
+Dim endDate As String
+Dim startDate As String
+Dim str As String
+Dim lastrow As Integer
+
+Dim i As Integer
+Dim j As Integer
+
+''''''''get data from oanda.com'''''''''''''''''''''
+Dim URL As String
+Dim accountId As String
+accountId = "8244239" 'My ID
+Dim token As String
+token = "9e6898d3bc4f5ef5dd0cacd8fd025b31-7dc39a42131d5dfbaa3844e0ea330914" 'My token
+Dim inst As String
+Dim jsonstr As String
+Dim objHTTP As Variant
+Set objHTTP = CreateObject("MSXML2.ServerXMLHTTP")
+Dim fx_date As String
+
+For i = 3 To 16
+    
+
+    inst = ws.Cells(i, 1)
+    
+    For j = 3 To 9
+
+        fx_date = ws.Cells(2, j)
+        fx_date = Format(fx_date, "yyyy-MM-dd") + "T00%3A47%3A40Z"
+        MsgBox fx_date
+        URL = "https://api-fxpractice.oanda.com/v1/candles" _
+            + "?instrument=" & inst & "&accountId=" & accountId _
+            + "&granularity=D" _
+            + "&count=1" _
+            + "&candleFormat=bidask" _
+            + "&start=" + fx_date
+        '    + "&timezone=Asia%2Singapore"
+        objHTTP.Open "GET", URL, False
+        objHTTP.setRequestHeader "Authorization", "Bearer " & token
+        objHTTP.send ("")
+        
+        jsonstr = objHTTP.ResponseText
+        MsgBox inst
+        MsgBox (jsonstr)
+        
+        ActiveWorkbook.Sheets("CcyData").Cells(i, j) = data_from_json(jsonstr)
+    Next j
+Next i
+End Sub
+
+''''''''function to convert the json to the closeBid number'''''''''''''''''''''''''''''''
+Function data_from_json(str As String) As Double
+Dim dataStr As String
+Dim startPos As Integer
+Dim endPos As Integer
+
+startPos = InStr(str, "closeBid")
+endPos = InStr(str, "closeAsk")
+
+str = Mid(str, startPos, endPos - startPos - 4)
+
+startPos = InStr(str, ": ")
+endPos = InStr(str, ",")
+dataStr = Mid(str, startPos + 2, endPos - startPos - 2)
+
+data_from_json = dataStr
+
+
+End Function
